@@ -67,6 +67,10 @@
     - Funkcje takie jak **skanowanie urządzeń**, **testy RSSI**, oraz **sprawdzanie wersji protokołu BLE** są dostępne na obu systemach.
     - Opcje związane z sniffingiem, atakiem MITM i testem klasy urządzenia są dostępne tylko na **Linux**.
     - Wireshark może być używany zarówno na **Windows**, jak i **Linux** do analizy szyfrowania połączeń.
+    - Uwagi:
+
+    Niektóre opcje są dostępne tylko na Linux, ale wszystkie są wyświetlane w menu. Program powiadomi Cię, jeśli próbujesz uruchomić funkcję, która jest dostępna tylko na Linux, a Ty używasz Windows.
+    Aby przechwytywać pakiety Bluetooth przy użyciu Wireshark, konieczne jest skonfigurowanie odpowiednich interfejsów na systemie.
 
 ### Przykład:
 
@@ -84,3 +88,6 @@
 10. Test szyfrowania połączenia (Wireshark)
 0. Wyjście
 Wybierz opcję: 
+Uwagi:
+
+Uwagi:
