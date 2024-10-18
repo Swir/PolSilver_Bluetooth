@@ -34,8 +34,8 @@
 
 1. Sklonuj repozytorium:
     ```bash
-    git clone https://github.com/your-username/PolSilver_Bluetooth.git
-    cd bluetooth-security-tool
+    git clone https://github.com/Swir/PolSilver_Bluetooth.git
+    cd PolSilver_Bluetooth
     ```
 
 2. Zainstaluj wymagane zależności:
