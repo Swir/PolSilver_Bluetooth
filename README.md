@@ -34,7 +34,7 @@
 
 1. Sklonuj repozytorium:
     ```bash
-    git clone https://github.com/your-username/bluetooth-security-tool.git
+    git clone https://github.com/your-username/PolSilver_Bluetooth.git
     cd bluetooth-security-tool
     ```
 
