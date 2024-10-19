@@ -4,6 +4,24 @@ from colorama import Fore, init
 import subprocess
 import platform
 
+# ASCII Art for PolSilver
+def display_ascii_art():
+    print(f"{Fore.CYAN}")
+    print(r"""
+      ___           ___           ___       ___                       ___       ___           ___           ___     
+     /\  \         /\  \         /\__\     /\  \          ___        /\__\     /\__\         /\  \         /\  \    
+    /::\  \       /::\  \       /:/  /    /::\  \        /\  \      /:/  /    /:/  /        /::\  \       /::\  \   
+   /:/\:\  \     /:/\:\  \     /:/  /    /:/\ \  \       \:\  \    /:/  /    /:/  /        /:/\:\  \     /:/\:\  \  
+  /::\~\:\  \   /:/  \:\  \   /:/  /    _\:\~\ \  \      /::\__\  /:/  /    /:/__/  ___   /::\~\:\  \   /::\~\:\  \ 
+ /:/\:\ \:\__\ /:/__/ \:\__\ /:/__/    /\ \:\ \ \__\  __/:/\/__/ /:/__/     |:|  | /\__\ /:/\:\ \:\__\ /:/\:\ \:\__\
+ \/__\:\/:/  / \:\  \ /:/  / \:\  \    \:\ \:\ \/__/ /\/:/  /    \:\  \     |:|  |/:/  / \:\~\:\ \/__/ \/_|::\/:/  /
+      \::/  /   \:\  /:/  /   \:\  \    \:\ \:\__\   \::/__/      \:\  \    |:|__/:/  /   \:\ \:\__\      |:|::/  / 
+       \/__/     \:\/:/  /     \:\  \    \:\/:/  /    \:\__\       \:\  \    \::::/__/     \:\ \/__/      |:|\/__/  
+                  \::/  /       \:\__\    \::/  /      \/__/        \:\__\    ~~~~          \:\__\        |:|  |    
+                   \/__/         \/__/     \/__/                     \/__/                   \/__/         \|__| 
+                                   
+    """)
+
 # Inicjalizacja kolorów terminala
 init(autoreset=True)
 
@@ -29,7 +47,7 @@ def menu():
     print(f"{Fore.GREEN}13. Sprawdzenie zabezpieczeń parowania")
     print(f"{Fore.GREEN}14. Tryb widoczności Bluetooth (Tylko Linux)")
     print(f"{Fore.GREEN}15. Wyświetlenie listy sparowanych urządzeń (Tylko Linux)")
-    print(f"{Fore.GREEN}16. Resetowanie ustawień Bluetooth")
+    print(f"{Fore.GREEN}16. Resetowanie ustawień Bluetooth (Tylko Linux)")
     print(f"{Fore.GREEN}17. Sprawdzanie poziomu baterii urządzenia (BLE)")
     print(f"{Fore.GREEN}18. Aktualizacja oprogramowania Bluetooth (Tylko Linux)")
     print(f"{Fore.RED}0. Wyjście")
@@ -44,6 +62,17 @@ def run_command(command):
     except subprocess.CalledProcessError as e:
         print(f"{Fore.RED}Błąd podczas wywołania komendy: {e}")
         return None
+
+# Funkcja do uruchamiania Wireshark
+def start_wireshark():
+    print(f"{Fore.CYAN}Uruchamiam Wireshark do przechwytywania pakietów...")
+    try:
+        if is_linux or is_windows:
+            run_command(['wireshark'])
+        else:
+            print(f"{Fore.RED}Wireshark nie został znaleziony.")
+    except Exception as e:
+        print(f"{Fore.RED}Błąd podczas uruchamiania Wireshark: {e}")
 
 # Funkcja do skanowania urządzeń BLE
 async def scan_for_devices():
@@ -133,11 +162,88 @@ def test_sniffing():
     else:
         print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
 
+# Funkcja do ataku MITM
+def mitm_attack():
+    if is_linux:
+        print(f"{Fore.CYAN}Uruchamiam Bettercap do ataku MITM...")
+        result = run_command(['sudo', 'bettercap', '-X'])
+        if result:
+            print(result)
+    else:
+        print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
+
+# Funkcja do odłączenia urządzenia BLE
+async def disconnect_device():
+    address = input(f"{Fore.CYAN}Podaj adres MAC urządzenia do odłączenia: ")
+    try:
+        async with BleakClient(address) as client:
+            await client.disconnect()
+            print(f"{Fore.GREEN}Urządzenie {address} zostało odłączone.")
+    except BleakError as e:
+        print(f"{Fore.RED}Błąd podczas odłączania urządzenia: {e}")
+    except Exception as e:
+        print(f"{Fore.RED}Błąd: {e}")
+
 # Funkcja do restartowania interfejsu Bluetooth (Linux only)
 def restart_bluetooth():
     if is_linux:
         print(f"{Fore.CYAN}Restartowanie interfejsu Bluetooth...")
         result = run_command(['sudo', 'systemctl', 'restart', 'bluetooth'])
+        if result:
+            print(result)
+    else:
+        print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
+
+# Funkcja do sprawdzania historii połączeń Bluetooth (Linux only)
+def check_bluetooth_history():
+    if is_linux:
+        print(f"{Fore.CYAN}Wyświetlanie historii połączeń Bluetooth...")
+        result = run_command(['sudo', 'journalctl', '-u', 'bluetooth'])
+        if result:
+            print(result)
+    else:
+        print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
+
+# Funkcja do sprawdzenia zabezpieczeń parowania
+async def check_pairing_security():
+    address = input(f"{Fore.CYAN}Podaj adres MAC urządzenia do sprawdzenia parowania: ")
+    try:
+        async with BleakClient(address) as client:
+            paired = await client.is_paired()
+            if paired:
+                print(f"{Fore.GREEN}Urządzenie {address} jest sparowane.")
+            else:
+                print(f"{Fore.YELLOW}Urządzenie {address} nie jest sparowane.")
+    except BleakError as e:
+        print(f"{Fore.RED}Błąd podczas sprawdzania parowania: {e}")
+    except Exception as e:
+        print(f"{Fore.RED}Błąd: {e}")
+
+# Funkcja do przełączania trybu widoczności Bluetooth (Linux only)
+def toggle_bluetooth_visibility():
+    if is_linux:
+        print(f"{Fore.CYAN}Przełączanie trybu widoczności Bluetooth...")
+        run_command(['sudo', 'hciconfig', 'hci0', 'piscan'])
+        print(f"{Fore.GREEN}Widoczność Bluetooth została włączona.")
+    else:
+        print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
+
+# Funkcja do resetowania ustawień Bluetooth (Linux only)
+def reset_bluetooth_settings():
+    if is_linux:
+        print(f"{Fore.CYAN}Resetowanie ustawień Bluetooth...")
+        result = run_command(['sudo', 'rfkill', 'block', 'bluetooth'])
+        run_command(['sudo', 'rfkill', 'unblock', 'bluetooth'])
+        if result:
+            print(f"{Fore.GREEN}Ustawienia Bluetooth zostały zresetowane.")
+    else:
+        print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
+
+# Funkcja do aktualizacji oprogramowania Bluetooth (Linux only)
+def update_bluetooth_firmware():
+    if is_linux:
+        print(f"{Fore.CYAN}Aktualizacja oprogramowania Bluetooth...")
+        result = run_command(['sudo', 'apt-get', 'install', '--only-upgrade', 'bluez'])
         if result:
             print(result)
     else:
@@ -157,6 +263,7 @@ async def check_battery_level():
 
 # Główna pętla programu
 if __name__ == "__main__":
+    display_ascii_art()  # Wyświetl ASCII art na początku
     while True:
         choice = menu()
         
@@ -172,9 +279,9 @@ if __name__ == "__main__":
         elif choice == '5':
             asyncio.run(pair_device())
         elif choice == '9':
-            asyncio.run(check_battery_level())
+            start_wireshark()
         elif choice == '10':
-            print(f"{Fore.GREEN}Odłączanie urządzenia BLE (funkcjonalność do zaimplementowania)")
+            asyncio.run(disconnect_device())
         
         # Opcje dostępne tylko na Linux
         elif choice == '6':
@@ -188,41 +295,26 @@ if __name__ == "__main__":
             else:
                 print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
         elif choice == '8':
-            if is_linux:
-                print(f"{Fore.GREEN}Uruchamianie ataku MITM (funkcjonalność do zaimplementowania)")
-            else:
-                print(f"{Fore.RED}Funkcja MITM dostępna tylko na Linux.")
+            mitm_attack()
         elif choice == '11':
             if is_linux:
                 restart_bluetooth()
             else:
                 print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
         elif choice == '12':
-            if is_linux:
-                print(f"{Fore.GREEN}Sprawdzanie historii połączeń Bluetooth (funkcjonalność do zaimplementowania)")
-            else:
-                print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
+            check_bluetooth_history()
         elif choice == '13':
-            print(f"{Fore.GREEN}Sprawdzanie zabezpieczeń parowania (funkcjonalność do zaimplementowania)")
+            asyncio.run(check_pairing_security())
         elif choice == '14':
-            if is_linux:
-                print(f"{Fore.GREEN}Przełączanie widoczności Bluetooth (funkcjonalność do zaimplementowania)")
-            else:
-                print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
+            toggle_bluetooth_visibility()
         elif choice == '15':
-            if is_linux:
-                print(f"{Fore.GREEN}Wyświetlanie listy sparowanych urządzeń (funkcjonalność do zaimplementowania)")
-            else:
-                print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
+            print(f"{Fore.YELLOW}Wyświetlenie listy sparowanych urządzeń - w trakcie rozwoju.")
         elif choice == '16':
-            print(f"{Fore.GREEN}Resetowanie ustawień Bluetooth (funkcjonalność do zaimplementowania)")
+            reset_bluetooth_settings()
         elif choice == '17':
             asyncio.run(check_battery_level())
         elif choice == '18':
-            if is_linux:
-                print(f"{Fore.GREEN}Aktualizacja oprogramowania Bluetooth (funkcjonalność do zaimplementowania)")
-            else:
-                print(f"{Fore.RED}Opcja dostępna tylko na Linux.")
+            update_bluetooth_firmware()
         
         # Wyjście
         elif choice == '0':
