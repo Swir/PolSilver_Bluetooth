@@ -1,0 +1,346 @@
+import tkinter as tk
+from tkinter import scrolledtext, Menu
+import asyncio
+from bleak import BleakScanner, BleakClient, BleakError
+import subprocess
+import threading
+import platform
+import os
+
+# Wykrywanie systemu operacyjnego
+is_linux = platform.system().lower() == "linux"
+is_windows = platform.system().lower() == "windows"
+
+# Tworzenie głównego okna aplikacji
+root = tk.Tk()
+root.title("PolSilver Bluetooth Security Tool by Swir")
+root.configure(bg="black")
+root.geometry("800x600")
+
+# Tworzenie okna przewijanego do wyświetlania wyników
+output_box = scrolledtext.ScrolledText(root, wrap=tk.WORD, bg="black", fg="green", font=("Courier", 12))
+output_box.pack(fill=tk.BOTH, expand=True)
+
+# Funkcja do aktualizacji wyświetlania tekstu
+def matrix_print(text):
+    output_box.insert(tk.END, text + "\n")
+    output_box.see(tk.END)
+
+# Funkcja czyszcząca okno
+def clear_output():
+    output_box.delete(1.0, tk.END)
+
+# Funkcja pomocnicza do uruchamiania asyncio w wątku dla Tkinter
+def run_asyncio_in_thread(coroutine):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(coroutine)
+    loop.close()
+
+# --- ROZSZERZONE FUNKCJE BLUETOOTH ---
+
+# Skanowanie urządzeń BLE
+async def scan_for_devices_async():
+    clear_output()
+    matrix_print("Skanowanie urządzeń Bluetooth...")
+    try:
+        devices = await BleakScanner.discover()
+        if devices:
+            matrix_print("Znalezione urządzenia:")
+            for device in devices:
+                name = device.name if device.name else "Brak nazwy (None)"
+                matrix_print(f"Urządzenie: {name}, Adres MAC: {device.address}")
+        else:
+            matrix_print("Brak urządzeń Bluetooth w zasięgu.")
+    except Exception as e:
+        matrix_print(f"Błąd podczas skanowania urządzeń: {e}")
+
+def scan_for_devices():
+    thread = threading.Thread(target=run_asyncio_in_thread, args=(scan_for_devices_async(),))
+    thread.start()
+
+# Test siły sygnału RSSI dla wszystkich urządzeń BLE
+async def test_signal_strength_all_async():
+    clear_output()
+    matrix_print("Test siły sygnału (RSSI) dla urządzeń Bluetooth...")
+    try:
+        devices = await BleakScanner.discover()
+        if devices:
+            matrix_print("Urządzenia i ich siła sygnału (RSSI):")
+            for device in devices:
+                name = device.name if device.name else "Brak nazwy (None)"
+                rssi = device.rssi if device.rssi is not None else "Brak danych RSSI"
+                matrix_print(f"Urządzenie: {name}, Adres MAC: {device.address}, RSSI: {rssi} dBm")
+        else:
+            matrix_print("Brak urządzeń Bluetooth w zasięgu.")
+    except Exception as e:
+        matrix_print(f"Błąd podczas testowania RSSI: {e}")
+
+def test_signal_strength_all():
+    thread = threading.Thread(target=run_asyncio_in_thread, args=(test_signal_strength_all_async(),))
+    thread.start()
+
+# Sprawdzanie wersji protokołu Bluetooth (BLE)
+async def check_bluetooth_version_async():
+    address = input_box.get()
+    clear_output()
+    matrix_print(f"Skanowanie urządzeń w pobliżu dla {address}...")
+    try:
+        devices = await BleakScanner.discover()
+        device_found = False
+        for device in devices:
+            if device.address == address:
+                device_found = True
+                break
+        if not device_found:
+            matrix_print(f"Urządzenie z adresem {address} nie zostało znalezione.")
+            return
+        async with BleakClient(address, timeout=15.0) as client:
+            services = await client.get_services()
+            matrix_print(f"Wersja protokołu Bluetooth dla urządzenia {address}: BLE")
+    except BleakError as e:
+        matrix_print(f"Błąd połączenia: {e}")
+    except Exception as e:
+        matrix_print(f"Błąd podczas sprawdzania wersji Bluetooth: {e}")
+
+def check_bluetooth_version():
+    thread = threading.Thread(target=run_asyncio_in_thread, args=(check_bluetooth_version_async(),))
+    thread.start()
+
+# Połączenie bez autoryzacji
+async def attempt_unauthorized_connection_async():
+    address = input_box.get()
+    clear_output()
+    matrix_print(f"Próba nawiązania połączenia z {address}...")
+    try:
+        async with BleakClient(address, timeout=15.0) as client:
+            await client.connect()
+            matrix_print(f"Połączenie nawiązane z {address}")
+            await client.disconnect()
+    except BleakError as e:
+        matrix_print(f"Błąd podczas nawiązywania połączenia: {e}")
+    except Exception as e:
+        matrix_print(f"Błąd: {e}")
+
+def attempt_unauthorized_connection():
+    thread = threading.Thread(target=run_asyncio_in_thread, args=(attempt_unauthorized_connection_async(),))
+    thread.start()
+
+# Sparowanie urządzenia BLE
+async def pair_device_async():
+    address = input_box.get()
+    clear_output()
+    matrix_print(f"Próba sparowania urządzenia {address}...")
+    try:
+        async with BleakClient(address) as client:
+            await client.pair()
+            matrix_print(f"Sparowanie z urządzeniem {address} zakończone sukcesem.")
+    except BleakError as e:
+        matrix_print(f"Błąd podczas parowania: {e}")
+    except Exception as e:
+        matrix_print(f"Błąd: {e}")
+
+def pair_device():
+    thread = threading.Thread(target=run_asyncio_in_thread, args=(pair_device_async(),))
+    thread.start()
+
+# Odłączenie urządzenia BLE
+async def disconnect_device_async():
+    address = input_box.get()
+    clear_output()
+    matrix_print(f"Odłączanie urządzenia {address}...")
+    try:
+        async with BleakClient(address) as client:
+            await client.disconnect()
+            matrix_print(f"Urządzenie {address} zostało odłączone.")
+    except BleakError as e:
+        matrix_print(f"Błąd podczas odłączania urządzenia: {e}")
+    except Exception as e:
+        matrix_print(f"Błąd: {e}")
+
+def disconnect_device():
+    thread = threading.Thread(target=run_asyncio_in_thread, args=(disconnect_device_async(),))
+    thread.start()
+
+# --- FUNKCJE SPECYFICZNE DLA LINUX ---
+
+# Test mocy urządzenia Bluetooth (Linux only)
+def test_device_class():
+    if is_linux:
+        address = input_box.get()
+        clear_output()
+        matrix_print(f"Uruchamianie testu klasy urządzenia dla {address}...")
+        try:
+            result = subprocess.run(['hciconfig', 'hci0', 'class'], capture_output=True, text=True)
+            matrix_print(f"Klasa urządzenia: {result.stdout}")
+        except FileNotFoundError:
+            matrix_print("hciconfig nie jest dostępny.")
+        except subprocess.CalledProcessError as e:
+            matrix_print(f"Błąd podczas testu klasy urządzenia: {e}")
+    else:
+        matrix_print("Opcja dostępna tylko na Linux.")
+
+# Test podatności na sniffing (Linux only)
+def test_sniffing():
+    if is_linux:
+        clear_output()
+        matrix_print("Uruchamianie sniffingu Bluetooth z btmon...")
+        try:
+            subprocess.run(["btmon"], check=True)
+        except FileNotFoundError:
+            matrix_print("btmon nie jest zainstalowany.")
+        except subprocess.CalledProcessError as e:
+            matrix_print(f"Błąd podczas uruchamiania btmon: {e}")
+    else:
+        matrix_print("Opcja dostępna tylko na Linux.")
+
+# MITM (Man-in-the-Middle) - Atak na Bluetooth (Linux only)
+def mitm_attack():
+    if is_linux:
+        clear_output()
+        matrix_print("Próba ataku MITM przy użyciu Bettercap...")
+        try:
+            subprocess.run(["bettercap", "-X"], check=True)
+            matrix_print("Atak MITM został uruchomiony.")
+        except FileNotFoundError:
+            matrix_print("Bettercap nie jest zainstalowany.")
+        except subprocess.CalledProcessError as e:
+            matrix_print(f"Błąd podczas uruchamiania Bettercap: {e}")
+    else:
+        matrix_print("Opcja dostępna tylko na Linux.")
+
+# Restartowanie interfejsu Bluetooth (Linux only)
+def restart_bluetooth():
+    if is_linux:
+        clear_output()
+        matrix_print("Restartowanie interfejsu Bluetooth...")
+        try:
+            subprocess.run(["sudo", "systemctl", "restart", "bluetooth"], check=True)
+            matrix_print("Interfejs Bluetooth został zrestartowany.")
+        except Exception as e:
+            matrix_print(f"Błąd podczas restartowania interfejsu Bluetooth: {e}")
+    else:
+        matrix_print("Opcja dostępna tylko na Linux.")
+
+# Historia połączeń Bluetooth (Linux only)
+def check_bluetooth_history():
+    if is_linux:
+        clear_output()
+        matrix_print("Sprawdzanie historii połączeń Bluetooth...")
+        try:
+            result = subprocess.run(["journalctl", "-u", "bluetooth"], capture_output=True, text=True)
+            matrix_print(result.stdout)
+        except Exception as e:
+            matrix_print(f"Błąd podczas sprawdzania historii: {e}")
+    else:
+        matrix_print("Opcja dostępna tylko na Linux.")
+
+# Tryb widoczności Bluetooth (Linux only)
+def toggle_bluetooth_visibility():
+    if is_linux:
+        clear_output()
+        matrix_print("Przełączanie widoczności Bluetooth...")
+        try:
+            subprocess.run(["sudo", "hciconfig", "hci0", "piscan"], check=True)
+            matrix_print("Widoczność Bluetooth została włączona.")
+        except Exception as e:
+            matrix_print(f"Błąd podczas włączania widoczności: {e}")
+    else:
+        matrix_print("Opcja dostępna tylko na Linux.")
+
+# Resetowanie ustawień Bluetooth (Linux only)
+def reset_bluetooth_settings():
+    if is_linux:
+        clear_output()
+        matrix_print("Resetowanie ustawień Bluetooth...")
+        try:
+            subprocess.run(["sudo", "rfkill", "block", "bluetooth"], check=True)
+            subprocess.run(["sudo", "rfkill", "unblock", "bluetooth"], check=True)
+            matrix_print("Ustawienia Bluetooth zostały zresetowane.")
+        except Exception as e:
+            matrix_print(f"Błąd podczas resetowania ustawień Bluetooth: {e}")
+    else:
+        matrix_print("Opcja dostępna tylko na Linux.")
+
+# Aktualizacja oprogramowania Bluetooth (Linux only)
+def update_bluetooth_firmware():
+    if is_linux:
+        clear_output()
+        matrix_print("Aktualizacja oprogramowania Bluetooth...")
+        try:
+            result = subprocess.run(["sudo", "apt-get", "install", "--only-upgrade", "bluez"], capture_output=True, text=True)
+            matrix_print(result.stdout)
+        except Exception as e:
+            matrix_print(f"Błąd podczas aktualizacji oprogramowania Bluetooth: {e}")
+    else:
+        matrix_print("Opcja dostępna tylko na Linux.")
+
+# --- INTEGRACJA WIRESHARK ---
+
+# Wireshark - Test szyfrowania połączeń Bluetooth
+def start_wireshark():
+    clear_output()
+    matrix_print("Uruchamianie Wireshark do analizy szyfrowania połączeń Bluetooth...")
+    try:
+        subprocess.run(["wireshark"], check=True)
+        matrix_print("Wireshark został uruchomiony.")
+    except FileNotFoundError:
+        matrix_print("Wireshark nie jest zainstalowany lub nie został znaleziony.")
+    except subprocess.CalledProcessError as e:
+        matrix_print(f"Błąd podczas uruchamiania Wireshark: {e}")
+
+# Logowanie wyników do pliku
+def log_to_file():
+    clear_output()
+    matrix_print("Zapisywanie wyników do pliku log.txt...")
+    try:
+        with open("log.txt", "w") as log_file:
+            log_file.write(output_box.get(1.0, tk.END))
+        matrix_print("Logi zostały zapisane do pliku log.txt.")
+    except Exception as e:
+        matrix_print(f"Błąd podczas zapisywania logów: {e}")
+
+# --- TWORZENIE MENU ---
+
+# Menu Bluetooth
+menu_bar = Menu(root)
+
+bluetooth_menu = Menu(menu_bar, tearoff=0, bg="black", fg="green")
+bluetooth_menu.add_command(label="Skanowanie Bluetooth (BLE)", command=scan_for_devices)
+bluetooth_menu.add_command(label="Test siły sygnału (RSSI)", command=test_signal_strength_all)
+bluetooth_menu.add_command(label="Sprawdzenie wersji Bluetooth", command=check_bluetooth_version)
+bluetooth_menu.add_command(label="Połączenie bez autoryzacji", command=attempt_unauthorized_connection)
+bluetooth_menu.add_command(label="Sparowanie urządzenia (BLE)", command=pair_device)
+bluetooth_menu.add_command(label="Odłączenie urządzenia BLE", command=disconnect_device)
+bluetooth_menu.add_command(label="Test szyfrowania połączeń (Wireshark)", command=start_wireshark)
+menu_bar.add_cascade(label="Bluetooth", menu=bluetooth_menu)
+
+# Menu Linux
+linux_menu = Menu(menu_bar, tearoff=0, bg="black", fg="green")
+linux_menu.add_command(label="Test mocy urządzenia", command=test_device_class)
+linux_menu.add_command(label="Test podatności na sniffing", command=test_sniffing)
+linux_menu.add_command(label="Atak MITM (Bettercap)", command=mitm_attack)
+linux_menu.add_command(label="Restart interfejsu Bluetooth", command=restart_bluetooth)
+linux_menu.add_command(label="Sprawdzanie historii połączeń", command=check_bluetooth_history)
+linux_menu.add_command(label="Tryb widoczności Bluetooth", command=toggle_bluetooth_visibility)
+linux_menu.add_command(label="Resetowanie ustawień Bluetooth", command=reset_bluetooth_settings)
+linux_menu.add_command(label="Aktualizacja oprogramowania Bluetooth", command=update_bluetooth_firmware)
+menu_bar.add_cascade(label="Linux", menu=linux_menu)
+
+# Menu logowania i wyjścia
+log_menu = Menu(menu_bar, tearoff=0, bg="black", fg="green")
+log_menu.add_command(label="Zapisz wyniki do pliku", command=log_to_file)
+log_menu.add_command(label="Wyjście", command=root.quit)
+menu_bar.add_cascade(label="Opcje", menu=log_menu)
+
+# Dodanie paska menu do okna
+root.config(menu=menu_bar)
+
+# Pole do wpisania adresu MAC
+input_label = tk.Label(root, text="Podaj adres MAC urządzenia:", bg="black", fg="green", font=("Courier", 12))
+input_label.pack(pady=5)
+input_box = tk.Entry(root, bg="black", fg="green", font=("Courier", 12), insertbackground="green")
+input_box.pack(pady=5)
+
+# Uruchomienie GUI
+root.mainloop()
