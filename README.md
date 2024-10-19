@@ -14,6 +14,14 @@
 
 
 **English / Polski**
+`
+ ____        ___                ___                            
+/\  _`\     /\_ \           __ /\_ \                           
+\ \ \L\ \___\//\ \     ____/\_\\//\ \    __  __     __   _ __  
+ \ \ ,__/ __`\\ \ \   /',__\/\ \ \ \ \  /\ \/\ \  /'__`\/\`'__\
+  \ \ \/\ \L\ \\_\ \_/\__, `\ \ \ \_\ \_\ \ \_/ |/\  __/\ \ \/ 
+   \ \_\ \____//\____\/\____/\ \_\/\____\\ \___/ \ \____\\ \_\ 
+    \/_/\/___/ \/____/\/___/  \/_/\/____/ \/__/   \/____/ \/_/ 
 
 Bluetooth Security Tool is a cross-platform tool built with Python, designed to test the security of Bluetooth Low Energy (BLE) devices. It provides various functions such as scanning for BLE devices, testing signal strength, pairing, checking battery levels, and even more advanced operations like sniffing and MITM attacks (Linux only).
 
