@@ -2,94 +2,78 @@
 
 # 🛡️ PolSilver Bluetooth Security Tool
 
-**Cross-platform BLE diagnostics & authorized security testing**  
-**Wieloplatformowa diagnostyka BLE i autoryzowane testy bezpieczeństwa**
+### Cross-Platform BLE Diagnostics & Authorized Security Testing Toolkit
+
+**Python • Bleak • Bluetooth LE • Windows • Linux • Console + GUI**
 
 ![Python](https://img.shields.io/badge/Python-3.7%2B-3776AB?logo=python&logoColor=white)
-![BLE](https://img.shields.io/badge/Bluetooth-BLE-0082FC?logo=bluetooth&logoColor=white)
-![Platforms](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
+![Bluetooth](https://img.shields.io/badge/Bluetooth-BLE-0082FC?logo=bluetooth&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=black)
+![Use](https://img.shields.io/badge/Use-Authorized%20Only-orange)
 
 </div>
 
 ---
 
-## 🇵🇱 Polski
+## 🚀 About
 
-**PolSilver Bluetooth Security Tool** to napisany w Pythonie zestaw narzędzi do diagnostyki urządzeń Bluetooth Low Energy oraz testów bezpieczeństwa wykonywanych we własnym środowisku lub za zgodą właściciela urządzenia.
+**PolSilver Bluetooth Security Tool** is a Python toolkit for Bluetooth Low Energy diagnostics, device inspection and authorized security testing. It is built around `bleak` and includes both console and GUI variants.
 
-### 🔎 Najważniejsze możliwości
-- wykrywanie pobliskich urządzeń BLE
-- odczyt i porównywanie siły sygnału RSSI
-- przegląd usług udostępnianych przez urządzenia BLE
-- sprawdzanie stanu połączenia i parowania
-- odczyt poziomu baterii, gdy urządzenie udostępnia odpowiednią usługę
-- rozłączanie obsługiwanych połączeń
-- funkcje administracyjne Bluetooth zależne od systemu
-- integracja z systemowymi narzędziami diagnostycznymi na Linuxie
-- integracja z Wiresharkiem do analizy ruchu we własnym środowisku testowym
-- wersja konsolowa i GUI
+The project focuses on nearby-device discovery, RSSI inspection, BLE service information and platform-dependent Bluetooth diagnostics. Some Linux-specific integrations can use system Bluetooth tooling and Wireshark in controlled test environments.
 
-### 🚀 Instalacja
+It is designed for users searching for a **BLE scanner Python**, **Bluetooth diagnostics tool**, **Bleak GUI**, **Bluetooth security lab tool** or a cross-platform utility for inspecting devices they own or administer.
+
+---
+
+## ✨ Capabilities
+
+| Feature | Description |
+|---|---|
+| 📡 BLE discovery | Find nearby Bluetooth LE devices |
+| 📶 RSSI inspection | Review signal strength |
+| 🧩 Service inspection | Inspect advertised/available BLE services |
+| 🔋 Battery information | Read battery level when a device exposes it |
+| 🔗 Connection checks | Inspect supported connection state |
+| 🖥️ Console + GUI | Multiple interface variants |
+| 🐧 Linux tools | Optional integrations with Linux Bluetooth utilities |
+| 🔬 Traffic analysis | Wireshark-oriented lab workflow where supported |
+
+---
+
+## 📦 Installation
+
 ```bash
 git clone https://github.com/Swir/PolSilver_Bluetooth.git
 cd PolSilver_Bluetooth
 pip install bleak colorama
-```
-
-### ▶️ Uruchomienie
-Wersja konsolowa:
-```bash
 python run.py
 ```
 
-W repozytorium znajduje się również wariant GUI w pliku `GUI Ver,py`.
-
-### 🐧 Linux
-Niektóre funkcje korzystają z narzędzi dostępnych w systemach Linux, takich jak stos BlueZ i narzędzia diagnostyczne Bluetooth. Ich dostępność zależy od dystrybucji, adaptera oraz uprawnień użytkownika.
-
-### ⚠️ Bezpieczeństwo i legalne użycie
-Projekt jest przeznaczony do **diagnostyki, nauki oraz autoryzowanych testów bezpieczeństwa**. Korzystaj z funkcji analizy i testowania połączeń wyłącznie na urządzeniach, które należą do Ciebie lub dla których masz wyraźną zgodę właściciela. Niektóre operacje mogą rozłączyć urządzenie albo zmienić konfigurację lokalnego interfejsu Bluetooth.
+A GUI variant is included in the repository as `GUI Ver,py`.
 
 ---
 
-## 🇬🇧 English
+## 🔍 Discoverability
 
-**PolSilver Bluetooth Security Tool** is a Python toolkit for Bluetooth Low Energy diagnostics and security testing in your own environment or on devices you have explicit permission to test.
-
-### 🔎 Main capabilities
-- nearby BLE device discovery
-- RSSI signal-strength inspection
-- BLE service inspection
-- connection and pairing-status checks
-- battery-level reading when supported by the device
-- supported connection management
-- platform-dependent Bluetooth administration
-- integration with Linux Bluetooth diagnostic utilities
-- Wireshark integration for analysis in an authorized test environment
-- console and GUI variants
-
-### 🚀 Installation
-```bash
-git clone https://github.com/Swir/PolSilver_Bluetooth.git
-cd PolSilver_Bluetooth
-pip install bleak colorama
-```
-
-### ▶️ Run
-Console version:
-```bash
-python run.py
-```
-
-A GUI variant is also included as `GUI Ver,py`.
-
-### 🐧 Linux
-Some functionality relies on Linux Bluetooth tooling such as the BlueZ stack and diagnostic utilities. Availability depends on the distribution, Bluetooth adapter and user privileges.
-
-### ⚠️ Security & authorized use
-This project is intended for **diagnostics, education and authorized security testing**. Analyze or test Bluetooth connections only on devices you own or have explicit permission to assess. Some operations can disconnect devices or modify the local Bluetooth interface configuration.
+`bluetooth ble scanner python` • `bleak bluetooth tool` • `bluetooth diagnostics windows` • `bluetooth diagnostics linux` • `ble service scanner` • `ble rssi scanner` • `python bluetooth gui` • `bluetooth security testing lab`
 
 ---
 
-## 👤 Author / Autor
-Developed and maintained by **Swir**.
+## ⚠️ Authorized Use Only
+
+Use this toolkit only on devices you own, administer, or have explicit permission to test. Some operations can disconnect devices or alter local Bluetooth-interface state. Do not use the project to interfere with third-party devices or networks.
+
+---
+
+## 👨‍💻 Author
+
+Developed by **Swir** — [@Swir](https://github.com/Swir)
+
+<div align="center">
+
+### 🛡️ Discover • Inspect • Diagnose • Learn
+
+⭐ **Star the repository if it helps your BLE lab work!**
+
+</div>
