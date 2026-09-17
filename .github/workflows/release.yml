@@ -39,7 +39,7 @@ jobs:
       - name: Build EXE
         shell: pwsh
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name PolSilverBluetooth --icon assets/polsilver.ico --paths src --collect-all bleak --collect-all PySide6 run.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name PolSilverBluetooth --icon assets/polsilver.ico --add-data "assets/polsilver.png;assets" --paths src --collect-all bleak --collect-all PySide6 run.py
       - name: Smoke test packaged app
         shell: pwsh
         run: |
@@ -52,6 +52,7 @@ jobs:
           New-Item -ItemType Directory -Force $dir | Out-Null
           Copy-Item .\dist\PolSilverBluetooth.exe "$dir\PolSilverBluetooth.exe"
           Copy-Item README.md,CHANGELOG.md,SECURITY.md "$dir\"
+          Copy-Item assets\polsilver.svg "$dir\polsilver.svg"
           Compress-Archive -Path "$dir\*" -DestinationPath "$dir.zip" -Force
           (Get-FileHash .\dist\PolSilverBluetooth.exe -Algorithm SHA256).Hash.ToLower() + "  PolSilverBluetooth.exe" | Set-Content "PolSilverBluetooth.exe.sha256"
           (Get-FileHash "$dir.zip" -Algorithm SHA256).Hash.ToLower() + "  $dir.zip" | Set-Content "$dir.zip.sha256"
