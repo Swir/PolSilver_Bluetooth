@@ -2,11 +2,12 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .coverage
+htmlcov/
 .venv/
 venv/
 build/
 dist/
 *.spec
-*.log
 assets/*.ico
-.DS_Store
+assets/*.png
+*.log

@@ -1,79 +1,77 @@
-<div align="center">
+# PolSilver Bluetooth 2
 
-# 🛡️ PolSilver Bluetooth Security Tool
+Modern cross-platform **Bluetooth Low Energy diagnostics** for devices you own, administer, or have explicit permission to inspect.
 
-### Cross-Platform BLE Diagnostics & Authorized Security Testing Toolkit
+PolSilver Bluetooth 2 replaces the old duplicated console/GUI scripts with one maintainable PySide6 application. It focuses on passive BLE discovery, signal quality, standard GATT metadata, battery reporting when exposed by the device, local adapter diagnostics and exportable snapshots.
 
-**Python • Bleak • Bluetooth LE • Windows • Linux • Console + GUI**
+## Highlights
 
-![Python](https://img.shields.io/badge/Python-3.7%2B-3776AB?logo=python&logoColor=white)
-![Bluetooth](https://img.shields.io/badge/Bluetooth-BLE-0082FC?logo=bluetooth&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=black)
-![Use](https://img.shields.io/badge/Use-Authorized%20Only-orange)
+- Windows and Linux desktop application
+- Python 3.10–3.14
+- PySide6 / Qt 6 dark-blue UI
+- automatic Polish / English / Norwegian interface with manual switch
+- bounded BLE discovery (1–20 seconds)
+- RSSI quality classification
+- service/manufacturer advertisement metadata
+- explicit, user-confirmed connection inspection for authorized devices
+- GATT service/characteristic enumeration and standard battery characteristic reading
+- read-only local Bluetooth adapter diagnostics
+- JSON and CSV exports
+- settings stored in the user profile, not in the repository
+- custom PolSilver Bluetooth icon
+- automated tests, Windows EXE, portable ZIP and SHA256 checksums
 
-</div>
+## Safety model
 
----
+Version 2 intentionally removes the legacy one-click MITM/Bettercap path, unauthorised-connection wording, Bluetooth reset/firmware operations and other intrusive actions. Connection inspection is presented only for a device you own, administer, or are authorized to test. Local system diagnostics are read-only.
 
-## 🚀 About
-
-**PolSilver Bluetooth Security Tool** is a Python toolkit for Bluetooth Low Energy diagnostics, device inspection and authorized security testing. It is built around `bleak` and includes both console and GUI variants.
-
-The project focuses on nearby-device discovery, RSSI inspection, BLE service information and platform-dependent Bluetooth diagnostics. Some Linux-specific integrations can use system Bluetooth tooling and Wireshark in controlled test environments.
-
-It is designed for users searching for a **BLE scanner Python**, **Bluetooth diagnostics tool**, **Bleak GUI**, **Bluetooth security lab tool** or a cross-platform utility for inspecting devices they own or administer.
-
----
-
-## ✨ Capabilities
-
-| Feature | Description |
-|---|---|
-| 📡 BLE discovery | Find nearby Bluetooth LE devices |
-| 📶 RSSI inspection | Review signal strength |
-| 🧩 Service inspection | Inspect advertised/available BLE services |
-| 🔋 Battery information | Read battery level when a device exposes it |
-| 🔗 Connection checks | Inspect supported connection state |
-| 🖥️ Console + GUI | Multiple interface variants |
-| 🐧 Linux tools | Optional integrations with Linux Bluetooth utilities |
-| 🔬 Traffic analysis | Wireshark-oriented lab workflow where supported |
-
----
-
-## 📦 Installation
+## Install from source
 
 ```bash
-git clone https://github.com/Swir/PolSilver_Bluetooth.git
-cd PolSilver_Bluetooth
-pip install bleak colorama
-python run.py
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -e .
+python -m polsilver
 ```
 
-A GUI variant is included in the repository as `GUI Ver,py`.
+Linux may require BlueZ and permission to access the Bluetooth adapter. Windows uses the WinRT Bluetooth backend provided through Bleak.
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+The CI matrix tests Python 3.10, 3.11, 3.12, 3.13 and 3.14. A Windows job also initializes the Qt application in smoke-test mode.
+
+## Releases
+
+Numbered releases publish:
+
+- `PolSilverBluetooth.exe`
+- portable Windows x64 ZIP
+- SHA256 for the EXE and ZIP
+
+The release workflow runs the unit tests and a packaged EXE smoke test before publishing.
+
+## Project layout
+
+```text
+src/polsilver/       application, BLE diagnostics, settings, exports and UI
+assets/              application artwork
+resources/           optional future static resources
+tests/               automated tests
+tools/               release/icon tooling
+.github/workflows/   CI and Windows release automation
+```
+
+## Responsible use
+
+Bluetooth identifiers and advertisements can be privacy-sensitive. Do not collect, publish or retain scans of third-party devices without a legitimate reason and appropriate permission.
 
 ---
 
-## 🔍 Discoverability
-
-`bluetooth ble scanner python` • `bleak bluetooth tool` • `bluetooth diagnostics windows` • `bluetooth diagnostics linux` • `ble service scanner` • `ble rssi scanner` • `python bluetooth gui` • `bluetooth security testing lab`
-
----
-
-## ⚠️ Authorized Use Only
-
-Use this toolkit only on devices you own, administer, or have explicit permission to test. Some operations can disconnect devices or alter local Bluetooth-interface state. Do not use the project to interfere with third-party devices or networks.
-
----
-
-## 👨‍💻 Author
-
-Developed by **Swir** — [@Swir](https://github.com/Swir)
-
-<div align="center">
-
-### 🛡️ Discover • Inspect • Diagnose • Learn
-
-⭐ **Star the repository if it helps your BLE lab work!**
-
-</div>
+**by Swir** — https://github.com/Swir
