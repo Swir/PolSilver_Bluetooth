@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.1.0 - 2026-09-17
+
+### Restored after regression audit
+- Explicit OS-backed pairing for one selected, authorized BLE device, protected by a confirmation dialog.
+- Read-only paired/connected device inventory on Linux where BlueZ `bluetoothctl` exposes it.
+- Recent Bluetooth service/connection history diagnostics using read-only OS logs on Linux and Windows.
+- Local Wireshark launcher when Wireshark is already installed; no automatic capture/interception workflow is started.
+- Diagnostics-log export to a text file.
+
+### Improved
+- The Windows packaged app now bundles the generated runtime icon, not only executable metadata icon resources.
+- Packaged smoke testing constructs and briefly shows the real main window so GUI/resource regressions are detected before release.
+- Double-clicking a scan result opens the same authorized GATT inspection path.
+- README now displays the project icon and documents which legacy functions were safely restored versus intentionally omitted.
+
+### Intentionally omitted
+- MITM/Bettercap automation.
+- "Unauthorized connection" testing.
+- Forced sniffing/capture automation.
+- Destructive Bluetooth reset or firmware/package modification.
+- Forced visibility/restart actions.
+
 ## 2.0.0 - 2026-09-17
 
 ### Added
