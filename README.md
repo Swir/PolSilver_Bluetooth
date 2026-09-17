@@ -1,29 +1,63 @@
-# PolSilver Bluetooth 2
+<div align="center">
 
-Modern cross-platform **Bluetooth Low Energy diagnostics** for devices you own, administer, or have explicit permission to inspect.
+<img src="assets/polsilver.svg" alt="PolSilver Bluetooth icon" width="128" height="128">
 
-PolSilver Bluetooth 2 replaces the old duplicated console/GUI scripts with one maintainable PySide6 application. It focuses on passive BLE discovery, signal quality, standard GATT metadata, battery reporting when exposed by the device, local adapter diagnostics and exportable snapshots.
+# PolSilver Bluetooth 2.1
 
-## Highlights
+### Cross-platform Bluetooth Low Energy diagnostics for devices you own, administer, or have explicit permission to inspect
+
+**Python 3.10–3.14 • PySide6 / Qt 6 • Bleak • Windows / Linux**
+
+</div>
+
+---
+
+## Regression audit result
+
+PolSilver Bluetooth 2.1 was compared against both legacy implementations (`run.py` and `GUI Ver,py`). The modern modular application is retained, while useful non-destructive features that disappeared during modernization have been restored or replaced with safer equivalents.
+
+### Restored / improved
+
+- bounded nearby BLE discovery
+- RSSI signal quality and advertisement metadata
+- authorized GATT inspection and standard battery reading
+- **OS-backed pairing** for one explicitly selected device, with confirmation before the action
+- **paired-device and connected-device inventory** on Linux via read-only `bluetoothctl` commands
+- **recent Bluetooth connection/history diagnostics** on Linux and Windows where the OS exposes them
+- **Wireshark launcher** when Wireshark is already installed; PolSilver does not automatically choose a capture interface or start an interception workflow
+- **Save diagnostics log** to a text file
+- JSON and CSV scan export
+- double-click a discovered device to open the authorized GATT inspection flow
+- custom PolSilver icon shown in this README, in the source GUI and in the packaged Windows EXE
+- PL / EN / NO interface with automatic system-language selection and manual switch
+
+### Intentionally not restored
+
+The old versions also exposed actions that are inappropriate for a safe diagnostics application. Version 2.1 therefore does **not** restore automated MITM/Bettercap attacks, "unauthorized connection" testing, forced sniffing, destructive Bluetooth reset, firmware/package modification, forced visibility changes, or other intrusive operations. These omissions are deliberate rather than regressions.
+
+---
+
+## Main features
 
 - Windows and Linux desktop application
 - Python 3.10–3.14
-- PySide6 / Qt 6 dark-blue UI
-- automatic Polish / English / Norwegian interface with manual switch
+- responsive PySide6 / Qt 6 dark-blue UI
 - bounded BLE discovery (1–20 seconds)
 - RSSI quality classification
-- service/manufacturer advertisement metadata
-- explicit, user-confirmed connection inspection for authorized devices
-- GATT service/characteristic enumeration and standard battery characteristic reading
+- service UUID and manufacturer advertisement metadata
+- explicit user-confirmed GATT inspection for authorized devices
+- standard battery characteristic reading when exposed by the device
+- explicit user-confirmed OS pairing request
 - read-only local Bluetooth adapter diagnostics
-- JSON and CSV exports
+- Linux paired / connected device inventory and recent BlueZ service history
+- Windows Bluetooth PnP, service and recent BTHUSB event diagnostics
+- optional local Wireshark launcher
+- JSON / CSV exports and text diagnostic-log export
 - settings stored in the user profile, not in the repository
-- custom PolSilver Bluetooth icon
-- automated tests, Windows EXE, portable ZIP and SHA256 checksums
+- own application icon and `by Swir` footer
+- automated tests, packaged-GUI smoke test, Windows EXE, portable ZIP and SHA256 checksums
 
-## Safety model
-
-Version 2 intentionally removes the legacy one-click MITM/Bettercap path, unauthorised-connection wording, Bluetooth reset/firmware operations and other intrusive actions. Connection inspection is presented only for a device you own, administer, or are authorized to test. Local system diagnostics are read-only.
+---
 
 ## Install from source
 
@@ -36,41 +70,74 @@ pip install -e .
 python -m polsilver
 ```
 
-Linux may require BlueZ and permission to access the Bluetooth adapter. Windows uses the WinRT Bluetooth backend provided through Bleak.
+Linux normally requires BlueZ and permission to access the local Bluetooth adapter. Windows uses Bleak's WinRT backend.
 
-## Development
+---
+
+## Typical workflow
+
+1. Start **Scan nearby BLE**.
+2. Select a device from the result table.
+3. Use **Inspect selected device** only if you own/administer it or have permission to test it.
+4. Use **Pair selected device** only when you intend to pair that authorized device; PolSilver asks for confirmation first and the operating system still controls the pairing procedure.
+5. Use **Local adapter report** for read-only operating-system diagnostics.
+6. Export a scan to JSON/CSV or save the diagnostics log as text when needed.
+7. **Open Wireshark** only launches an already installed Wireshark application. Capture only traffic/interfaces you are authorized to inspect.
+
+---
+
+## Development and tests
 
 ```bash
 pip install -e ".[dev]"
 pytest
+python -m polsilver --smoke-test
 ```
 
-The CI matrix tests Python 3.10, 3.11, 3.12, 3.13 and 3.14. A Windows job also initializes the Qt application in smoke-test mode.
+The CI matrix tests Python **3.10, 3.11, 3.12, 3.13 and 3.14**. Windows CI initializes the real Qt main window. Release CI additionally builds the one-file EXE and runs that packaged GUI in smoke-test mode before publishing anything.
 
-## Releases
+---
 
-Numbered releases publish:
+## Windows releases
+
+A numbered release publishes:
 
 - `PolSilverBluetooth.exe`
-- portable Windows x64 ZIP
-- SHA256 for the EXE and ZIP
+- `PolSilverBluetooth.exe.sha256`
+- `PolSilver-Bluetooth-vX.Y.Z-Windows-x64.zip`
+- `PolSilver-Bluetooth-vX.Y.Z-Windows-x64.zip.sha256`
 
-The release workflow runs the unit tests and a packaged EXE smoke test before publishing.
+The portable package also contains README, CHANGELOG, SECURITY documentation and the project icon. The generated PNG icon is bundled inside the one-file EXE so the running packaged window uses the same PolSilver branding as the repository.
+
+---
 
 ## Project layout
 
 ```text
-src/polsilver/       application, BLE diagnostics, settings, exports and UI
-assets/              application artwork
-resources/           optional future static resources
-tests/               automated tests
-tools/               release/icon tooling
-.github/workflows/   CI and Windows release automation
+src/polsilver/
+  app.py          # Qt GUI, pairing confirmation, export/log actions
+  ble.py          # BLE discovery, authorized GATT inspection and pairing
+  system.py       # read-only local adapter/history diagnostics + Wireshark launcher
+  models.py       # diagnostic models
+  config.py       # per-user settings
+  export.py       # JSON/CSV exports
+  i18n.py         # PL/EN/NO translations
+assets/
+  polsilver.svg   # source icon displayed in this README
+  polsilver.png   # generated for packaged runtime icon
+  polsilver.ico   # generated Windows executable icon
+tests/
+tools/build_icon.py
+.github/workflows/
 ```
+
+---
 
 ## Responsible use
 
-Bluetooth identifiers and advertisements can be privacy-sensitive. Do not collect, publish or retain scans of third-party devices without a legitimate reason and appropriate permission.
+Bluetooth identifiers and advertisements can be privacy-sensitive. Do not collect, publish or retain scans of third-party devices without a legitimate reason and appropriate permission. Pairing and connection inspection must be used only with devices you own, administer, or have explicit authorization to test.
+
+See [`SECURITY.md`](SECURITY.md) for the project's safety boundary.
 
 ---
 
