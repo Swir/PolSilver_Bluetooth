@@ -31,15 +31,35 @@ def diagnostic_commands(system: str | None = None) -> list[DiagnosticCommand]:
                     "Get-Service bthserv | Select-Object Status,StartType,Name | Format-Table -AutoSize",
                 ),
             ),
+            DiagnosticCommand(
+                "Recent Bluetooth system events",
+                (
+                    "powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+                    "Get-WinEvent -FilterHashtable @{LogName='System'; ProviderName='BTHUSB'} -MaxEvents 40 -ErrorAction SilentlyContinue | Select-Object TimeCreated,Id,LevelDisplayName,Message | Format-List",
+                ),
+            ),
         ]
     if current == "linux":
-        commands = []
+        commands: list[DiagnosticCommand] = []
         if shutil.which("bluetoothctl"):
-            commands.append(DiagnosticCommand("Controller status", ("bluetoothctl", "show")))
+            commands.extend(
+                [
+                    DiagnosticCommand("Controller status", ("bluetoothctl", "show")),
+                    DiagnosticCommand("Paired devices", ("bluetoothctl", "devices", "Paired")),
+                    DiagnosticCommand("Connected devices", ("bluetoothctl", "devices", "Connected")),
+                ]
+            )
         if shutil.which("rfkill"):
             commands.append(DiagnosticCommand("RFKill status", ("rfkill", "list", "bluetooth")))
         if shutil.which("systemctl"):
             commands.append(DiagnosticCommand("Bluetooth service", ("systemctl", "--no-pager", "--full", "status", "bluetooth")))
+        if shutil.which("journalctl"):
+            commands.append(
+                DiagnosticCommand(
+                    "Recent Bluetooth connection history",
+                    ("journalctl", "--no-pager", "-u", "bluetooth", "-n", "200"),
+                )
+            )
         return commands
     return []
 
@@ -65,3 +85,15 @@ def run_local_diagnostics(system: str | None = None, timeout: float = 8.0) -> st
     if not reports:
         return "No read-only adapter diagnostics are defined for this operating system."
     return "\n".join(reports)
+
+
+def launch_wireshark() -> str:
+    """Launch an installed local Wireshark GUI without configuring or starting a capture."""
+    executable = shutil.which("wireshark") or shutil.which("wireshark.exe")
+    if not executable:
+        return "Wireshark was not found in PATH."
+    try:
+        subprocess.Popen([executable], shell=False)
+    except OSError as exc:
+        return f"Could not launch Wireshark: {exc}"
+    return "Wireshark launched. Start captures only on interfaces/traffic you are authorized to inspect."
