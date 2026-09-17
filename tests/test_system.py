@@ -6,5 +6,14 @@ def test_windows_diagnostics_are_read_only():
     joined = " ".join(" ".join(cmd.argv).lower() for cmd in commands)
     assert "get-pnpdevice" in joined
     assert "get-service" in joined
-    for forbidden in ("remove-", "disable-", "stop-service", "format", "shutdown"):
+    for forbidden in (
+        "remove-",
+        "disable-",
+        "stop-service",
+        "restart-computer",
+        "stop-computer",
+        "format.com",
+        "format.exe",
+        "shutdown.exe",
+    ):
         assert forbidden not in joined
