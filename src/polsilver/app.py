@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Callable
 
 from PySide6.QtCore import QThread, Qt, Signal
-from PySide6.QtGui import QDesktopServices, QIcon
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -25,14 +25,28 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import QUrl
 
-from .ble import discover_devices, inspect_device
+from .ble import discover_devices, inspect_device, pair_device
 from .config import Settings
 from .export import export_csv, export_json
 from .i18n import tr
 from .models import DeviceInspection, DeviceSnapshot
-from .system import run_local_diagnostics
+from .system import launch_wireshark, run_local_diagnostics
+
+
+def resource_path(*parts: str) -> Path:
+    """Resolve resources in source checkouts and PyInstaller one-file builds."""
+    bundle_root = getattr(sys, "_MEIPASS", None)
+    root = Path(bundle_root) if bundle_root else Path(__file__).resolve().parents[2]
+    return root.joinpath(*parts)
+
+
+def application_icon() -> QIcon:
+    for name in ("polsilver.png", "polsilver.ico", "polsilver.svg"):
+        candidate = resource_path("assets", name)
+        if candidate.exists():
+            return QIcon(str(candidate))
+    return QIcon()
 
 
 class AsyncWorker(QThread):
@@ -67,9 +81,7 @@ class MainWindow(QMainWindow):
     def _build_ui(self) -> None:
         self.setMinimumSize(980, 640)
         self.resize(1180, 760)
-        icon = Path(__file__).resolve().parents[2] / "assets" / "polsilver.svg"
-        if icon.exists():
-            self.setWindowIcon(QIcon(str(icon)))
+        self.setWindowIcon(application_icon())
 
         root = QWidget(self)
         layout = QVBoxLayout(root)
@@ -96,16 +108,31 @@ class MainWindow(QMainWindow):
         header.addWidget(self.language_combo)
         layout.addLayout(header)
 
-        controls = QHBoxLayout()
+        primary_controls = QHBoxLayout()
         self.scan_button = QPushButton()
         self.inspect_button = QPushButton()
+        self.pair_button = QPushButton()
         self.adapter_button = QPushButton()
         self.export_button = QPushButton()
+        for button in (
+            self.scan_button,
+            self.inspect_button,
+            self.pair_button,
+            self.adapter_button,
+            self.export_button,
+        ):
+            primary_controls.addWidget(button)
+        primary_controls.addStretch(1)
+        layout.addLayout(primary_controls)
+
+        secondary_controls = QHBoxLayout()
+        self.wireshark_button = QPushButton()
+        self.save_log_button = QPushButton()
         self.clear_button = QPushButton()
-        for button in (self.scan_button, self.inspect_button, self.adapter_button, self.export_button, self.clear_button):
-            controls.addWidget(button)
-        controls.addStretch(1)
-        layout.addLayout(controls)
+        for button in (self.wireshark_button, self.save_log_button, self.clear_button):
+            secondary_controls.addWidget(button)
+        secondary_controls.addStretch(1)
+        layout.addLayout(secondary_controls)
 
         splitter = QSplitter(Qt.Horizontal)
         self.table = QTableWidget(0, 5)
@@ -115,6 +142,7 @@ class MainWindow(QMainWindow):
         self.table.setSortingEnabled(True)
         self.table.verticalHeader().setVisible(False)
         self.table.itemSelectionChanged.connect(self._render_selected)
+        self.table.doubleClicked.connect(lambda _index: self.inspect_selected())
         splitter.addWidget(self.table)
 
         right = QWidget()
@@ -157,8 +185,11 @@ class MainWindow(QMainWindow):
 
         self.scan_button.clicked.connect(self.scan)
         self.inspect_button.clicked.connect(self.inspect_selected)
+        self.pair_button.clicked.connect(self.pair_selected)
         self.adapter_button.clicked.connect(self.adapter_report)
         self.export_button.clicked.connect(self.export_snapshot)
+        self.wireshark_button.clicked.connect(self.open_wireshark)
+        self.save_log_button.clicked.connect(self.save_log)
         self.clear_button.clicked.connect(self.log.clear)
 
     def _apply_language(self) -> None:
@@ -168,8 +199,11 @@ class MainWindow(QMainWindow):
         self.subtitle.setText(tr(lang, "subtitle"))
         self.scan_button.setText(tr(lang, "scan"))
         self.inspect_button.setText(tr(lang, "inspect"))
+        self.pair_button.setText(tr(lang, "pair"))
         self.adapter_button.setText(tr(lang, "adapter"))
         self.export_button.setText(tr(lang, "export"))
+        self.wireshark_button.setText(tr(lang, "wireshark"))
+        self.save_log_button.setText(tr(lang, "save_log"))
         self.clear_button.setText(tr(lang, "clear"))
         self.details_label.setText(tr(lang, "details"))
         self.log_label.setText(tr(lang, "log"))
@@ -196,6 +230,7 @@ class MainWindow(QMainWindow):
     def _busy(self, busy: bool) -> None:
         self.scan_button.setDisabled(busy)
         self.inspect_button.setDisabled(busy)
+        self.pair_button.setDisabled(busy)
         self.adapter_button.setDisabled(busy)
 
     def scan(self) -> None:
@@ -212,7 +247,13 @@ class MainWindow(QMainWindow):
         self.table.setSortingEnabled(False)
         self.table.setRowCount(len(self.devices))
         for row, device in enumerate(self.devices):
-            values = [device.name, device.address, "" if device.rssi is None else str(device.rssi), device.signal_quality, str(len(device.service_uuids))]
+            values = [
+                device.name,
+                device.address,
+                "" if device.rssi is None else str(device.rssi),
+                device.signal_quality,
+                str(len(device.service_uuids)),
+            ]
             for column, value in enumerate(values):
                 item = QTableWidgetItem(value)
                 item.setData(Qt.UserRole, device.address)
@@ -235,7 +276,12 @@ class MainWindow(QMainWindow):
         if not device:
             self._append_log(tr(self.language, "select"))
             return
-        answer = QMessageBox.question(self, tr(self.language, "app"), tr(self.language, "authorized"), QMessageBox.Yes | QMessageBox.No)
+        answer = QMessageBox.question(
+            self,
+            tr(self.language, "app"),
+            tr(self.language, "authorized"),
+            QMessageBox.Yes | QMessageBox.No,
+        )
         if answer != QMessageBox.Yes:
             return
         self._busy(True)
@@ -252,6 +298,27 @@ class MainWindow(QMainWindow):
         self._append_log(tr(self.language, "inspect_done"))
         self._render_selected()
 
+    def pair_selected(self) -> None:
+        device = self._selected_device()
+        if not device:
+            self._append_log(tr(self.language, "select"))
+            return
+        answer = QMessageBox.question(
+            self,
+            tr(self.language, "pair"),
+            tr(self.language, "pair_confirm", name=device.name, address=device.address),
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        self._busy(True)
+        self._append_log(tr(self.language, "pair_started", address=device.address))
+        worker = AsyncWorker(lambda: pair_device(device.address, max(self.settings.connect_timeout, 20.0)), self)
+        worker.result.connect(lambda value: self._append_log(tr(self.language, "pair_done" if value else "pair_not_confirmed")))
+        worker.error.connect(lambda error: self._append_log(tr(self.language, "pair_error", error=error)))
+        worker.finished.connect(lambda: self._busy(False))
+        self._track(worker)
+
     def adapter_report(self) -> None:
         self._busy(True)
         worker = AsyncWorker(run_local_diagnostics, self)
@@ -260,11 +327,36 @@ class MainWindow(QMainWindow):
         worker.finished.connect(lambda: self._busy(False))
         self._track(worker)
 
+    def open_wireshark(self) -> None:
+        self._append_log(launch_wireshark())
+
+    def save_log(self) -> None:
+        path, _selected = QFileDialog.getSaveFileName(
+            self,
+            tr(self.language, "save_log"),
+            "polsilver-log.txt",
+            "Text (*.txt);;All files (*)",
+        )
+        if not path:
+            return
+        target = Path(path)
+        try:
+            target.write_text(self.log.toPlainText(), encoding="utf-8")
+        except OSError as exc:
+            self._append_log(tr(self.language, "save_log_error", error=exc))
+            return
+        self._append_log(tr(self.language, "saved", path=target))
+
     def export_snapshot(self) -> None:
         if not self.devices:
             self._append_log(tr(self.language, "select"))
             return
-        path, selected = QFileDialog.getSaveFileName(self, tr(self.language, "save"), "polsilver-scan.json", "JSON (*.json);;CSV (*.csv)")
+        path, selected = QFileDialog.getSaveFileName(
+            self,
+            tr(self.language, "save"),
+            "polsilver-scan.json",
+            "JSON (*.json);;CSV (*.csv)",
+        )
         if not path:
             return
         target = Path(path)
@@ -290,7 +382,11 @@ class MainWindow(QMainWindow):
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="PolSilver Bluetooth LE diagnostics")
-    parser.add_argument("--smoke-test", action="store_true", help="Initialize Qt and exit for packaged-build verification")
+    parser.add_argument(
+        "--smoke-test",
+        action="store_true",
+        help="Initialize the real Qt window and exit for packaged-build verification",
+    )
     return parser
 
 
@@ -299,8 +395,12 @@ def main(argv: list[str] | None = None) -> int:
     app = QApplication(sys.argv[:1])
     app.setApplicationName("PolSilver Bluetooth")
     app.setOrganizationName("Swir")
-    if args.smoke_test:
-        return 0
+    app.setWindowIcon(application_icon())
     window = MainWindow()
+    if args.smoke_test:
+        window.show()
+        app.processEvents()
+        window.close()
+        return 0
     window.show()
     return app.exec()
