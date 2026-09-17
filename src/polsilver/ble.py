@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Any
 
 from bleak import BleakClient, BleakScanner
@@ -85,3 +84,23 @@ async def inspect_device(address: str, timeout: float = 12.0) -> DeviceInspectio
             )
     except BleakError as exc:
         raise RuntimeError(f"BLE connection failed: {exc}") from exc
+
+
+async def pair_device(address: str, timeout: float = 20.0) -> bool:
+    """Request OS-backed pairing for one explicitly selected authorized device."""
+    address = address.strip()
+    if not address:
+        raise ValueError("device address is required")
+    timeout = min(max(float(timeout), 5.0), 60.0)
+    client = BleakClient(address, timeout=timeout)
+    try:
+        paired = await client.pair()
+        return bool(paired)
+    except BleakError as exc:
+        raise RuntimeError(f"BLE pairing failed: {exc}") from exc
+    finally:
+        try:
+            if client.is_connected:
+                await client.disconnect()
+        except (BleakError, OSError):
+            pass
